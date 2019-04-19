@@ -1,0 +1,37 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    aws-eventstream (1.0.2)
+    aws-partitions (1.151.0)
+    aws-sdk-core (3.48.4)
+      aws-eventstream (~> 1.0, >= 1.0.2)
+      aws-partitions (~> 1.0)
+      aws-sigv4 (~> 1.1)
+      jmespath (~> 1.0)
+    aws-sdk-ec2 (1.79.0)
+      aws-sdk-core (~> 3, >= 3.48.2)
+      aws-sigv4 (~> 1.1)
+    aws-sdk-ecr (1.14.0)
+      aws-sdk-core (~> 3, >= 3.48.2)
+      aws-sigv4 (~> 1.1)
+    aws-sdk-ecs (1.36.0)
+      aws-sdk-core (~> 3, >= 3.48.2)
+      aws-sigv4 (~> 1.1)
+    aws-sigv4 (1.1.0)
+      aws-eventstream (~> 1.0, >= 1.0.2)
+    commander (4.4.7)
+      highline (~> 2.0.0)
+    highline (2.0.2)
+    jmespath (1.4.0)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  aws-sdk-ec2 (~> 1.79)
+  aws-sdk-ecr (~> 1.14)
+  aws-sdk-ecs (~> 1.36)
+  commander (~> 4.4)
+
+BUNDLED WITH
+   1.17.3

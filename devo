@@ -1,0 +1,49 @@
+#!/usr/bin/env ruby
+
+require 'rubygems'
+require 'commander'
+require_relative 'lib/amazon'
+
+class MyApplication
+	include Commander::Methods
+	include Amazon
+
+	def run
+		program :name, 'devo'
+		program :version, '0.0.1'
+		program :description, 'Devops Tool for Mode Media'
+
+		command :run do |c|
+			c.syntax = 'devo run [options]'
+			c.summary = ''
+			c.description = ''
+			c.example 'run a command in the context of a task definition', 'command example'
+			c.option '--task_definition TASK_DEFINITION', String, 'Task definiton family name'
+			c.option '--cluster CLUSTER', String, 'Cluster name to launch into'
+			c.action do |args, options|
+				options.default task_definition: 'prise-production-worker', cluster: 'staging'
+
+				ip_addr = find_ip_address!(options.cluster)
+				task_data = find_task_data!(options.task_definition)
+				
+				envs = task_data[:environment].map{|e| "-e #{e.name}=#{e.value}"}
+				
+				ecr_data = get_authorization_token
+
+				creds = get_aws_credentials!(task_data[:role])
+				if creds
+					envs << "-e AWS_ACCESS_KEY_ID=#{creds.access_key_id}"
+					envs << "-e AWS_SECRET_ACCESS_KEY=#{creds.secret_access_key}"
+					envs << "-e AWS_SESSION_TOKEN=#{creds.session_token}"
+				end
+
+				system "ssh #{ip_addr} docker login -u #{ecr_data[:user]} -p #{ecr_data[:password]} #{ecr_data[:endpoint]}"
+				exec "ssh -t #{ip_addr} docker run -it --rm #{envs.join(' ')} #{task_data[:image]} #{args.join(' ')}"
+			end
+		end
+
+		run!
+	end
+end
+
+MyApplication.new.run if $0 == __FILE__
