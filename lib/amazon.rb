@@ -1,6 +1,7 @@
 require 'aws-sdk-ecs'
 require 'aws-sdk-ec2'
 require 'aws-sdk-ecr'
+require 'securerandom'
 
 module Amazon
 	def find_ip_address!(cluster)
@@ -63,7 +64,10 @@ module Amazon
 	def get_aws_credentials!(role_arn)
 		sts = Aws::STS::Client.new
 		user = sts.get_caller_identity.arn.split('/')[-1]
-		assumed_role = sts.assume_role(role_arn: role_arn, role_session_name: "#{user}-devo")
+		assumed_role = sts.assume_role(role_arn: role_arn, role_session_name: "#{user}-#{SecureRandom.uuid}")
+
+		# confirm inside container:
+		# puts Aws::STS::Client.new.get_caller_identity; puts ENV['AWS_ACCESS_KEY_ID'];1
 
 		raise 'Unable to assume role' unless assumed_role
 
