@@ -4,18 +4,23 @@ require 'aws-sdk-ecr'
 require 'securerandom'
 
 module Amazon
-	def find_ip_address!(cluster)
+	def find_instance_id!(cluster)
 		ecs = Aws::ECS::Client.new
-		ec2 = Aws::EC2::Client.new
 
 		instance_arn = ecs.list_container_instances(cluster: cluster)[:container_instance_arns].first
 		
 		raise 'Unable to find instance' unless instance_arn
 
 		resp = ecs.describe_container_instances cluster: cluster, container_instances: [instance_arn]
+		
 		instance_id = resp[:container_instances].first[:ec2_instance_id]
-
 		raise 'Unable to find instance id' unless instance_id
+
+		instance_id
+	end
+
+	def find_ip_address!(instance_id)
+		ec2 = Aws::EC2::Client.new
 
 		resp = ec2.describe_instances instance_ids: [instance_id]
 		ip_addr = resp.reservations[0].instances[0].public_ip_address

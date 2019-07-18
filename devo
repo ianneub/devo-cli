@@ -23,7 +23,7 @@ class MyApplication
 			c.action do |args, options|
 				options.default task_definition: 'prise-production-worker', cluster: 'staging'
 
-				ip_addr = find_ip_address!(options.cluster)
+				instance_id = find_instance_id!(options.cluster)
 				task_data = find_task_data!(options.task_definition)
 				
 				envs = task_data[:environment].map{|e| "-e #{e.name}=#{e.value}"}
@@ -37,8 +37,9 @@ class MyApplication
 					envs << "-e AWS_SESSION_TOKEN=#{creds.session_token}"
 				end
 
-				system "ssh #{ip_addr} docker login -u #{ecr_data[:user]} -p #{ecr_data[:password]} #{ecr_data[:endpoint]}"
-				exec "ssh -t #{ip_addr} docker run -it --rm #{envs.join(' ')} #{task_data[:image]} #{args.join(' ')}"
+				system "ssh #{instance_id} docker login -u #{ecr_data[:user]} -p #{ecr_data[:password]} #{ecr_data[:endpoint]}"
+				cmd = "ssh -t #{instance_id} docker run -it --rm #{envs.join(' ')} #{task_data[:image]} #{args.join(' ')}"
+				exec cmd
 			end
 		end
 
