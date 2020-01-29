@@ -10,7 +10,7 @@ class MyApplication
 
 	def run
 		program :name, 'devo'
-		program :version, '0.2.0'
+		program :version, '0.2.1'
 		program :description, 'Devops Tool for Mode Media'
 
 		command :run do |c|
@@ -59,10 +59,13 @@ class MyApplication
 				raise "Could not find docker id for container: #{options.cluster}:#{options.service}:#{options.container_name}" unless id
 
 				cmd = "ssh -t #{ip} docker exec -it #{id} #{args.join(' ')}"
+				
+				puts "Connecting to #{ip} ..."
 				exec cmd
 			end
 		end
 		alias_command :staging, :exec, '--cluster', 'staging', '--service', 'prise-staging', '--container_name', 'worker'
+		alias_command :prod, :exec, '--cluster', 'production', '--service', 'prise-production-worker', '--container_name', 'worker'
 
 		run!
 	end
