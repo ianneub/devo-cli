@@ -10,16 +10,16 @@ class MyApplication
 
 	def run
 		program :name, 'devo'
-		program :version, '0.0.1'
+		program :version, '0.2.0'
 		program :description, 'Devops Tool for Mode Media'
 
 		command :run do |c|
 			c.syntax = 'devo run [options]'
 			c.summary = 'Run and exec into a one off docker instance based on an existing task.'
-			c.description = ''
-			c.example 'run a command in the context of a task definition', 'command example'
-			c.option '--task_definition TASK_DEFINITION', String, 'Task definiton family name'
-			c.option '--cluster CLUSTER', String, 'Cluster name to launch into'
+			c.description = 'SSH into a staging instance and run a new docker instance with env vars from an existing ECS task.'
+			c.example 'run a command in the context of a task definition', 'devo run rails console'
+			c.option '-c CLUSTER', '--cluster CLUSTER', String, 'Cluster name to launch into'
+			c.option '--task-definition TASK_DEFINITION', String, 'Task definiton family name'
 			c.action do |args, options|
 				options.default task_definition: 'prise-production-worker', cluster: 'staging'
 
@@ -47,10 +47,10 @@ class MyApplication
 		command :exec do |c|
 			c.syntax = 'devo exec [options]'
 			c.summary = 'Exec into a running docker instance.'
-			c.description = ''
-			c.example 'run a command in the context of the staging environment', 'command example'
-			c.option '--cluster CLUSTER', String, 'Cluster name to exec into.'
-			c.option '--service SERVICE', String, 'Service to exec into.'
+			c.description = 'SSH into a running ECS Container Instance and exec into a running docker container.'
+			c.example 'run a command in the context of the staging environment', 'devo exec rails console'
+			c.option '-c CLUSTER', '--cluster CLUSTER', String, 'Cluster name to exec into.'
+			c.option '-s SERVICE', '--service SERVICE', String, 'Service to exec into.'
 			c.option '--container-name CONTAINER_NAME', String, 'Container name to exec into.'
 			c.action do |args, options|
 				options.default cluster: 'staging', service: 'prise-staging', container_name: 'worker'
@@ -62,6 +62,7 @@ class MyApplication
 				exec cmd
 			end
 		end
+		alias_command :staging, :exec, '--cluster', 'staging', '--service', 'prise-staging', '--container_name', 'worker'
 
 		run!
 	end
