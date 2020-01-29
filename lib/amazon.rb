@@ -43,6 +43,22 @@ module Amazon
 		}
 	end
 
+	def find_runtime_id_and_ip!(cluster, service, container_name)
+		output = []
+
+		ecs = Aws::ECS::Client.new
+		task_arns = ecs.list_tasks(cluster: cluster, service_name: service).task_arns
+		task = ecs.describe_tasks(cluster: cluster, tasks: task_arns).tasks.first
+		return nil unless task
+
+		output << task.containers&.find{|c| c.name == container_name}&.runtime_id
+
+		# find container instance id
+		output << find_ip_address!(ecs.describe_container_instances(cluster: cluster, container_instances: [task.container_instance_arn]).container_instances.first.ec2_instance_id)
+
+		output
+	end
+
 	def find_env_vars!(task_definition)
 		task_definition.container_definitions.first.environment
 	end

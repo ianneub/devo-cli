@@ -15,7 +15,7 @@ class MyApplication
 
 		command :run do |c|
 			c.syntax = 'devo run [options]'
-			c.summary = ''
+			c.summary = 'Run and exec into a one off docker instance based on an existing task.'
 			c.description = ''
 			c.example 'run a command in the context of a task definition', 'command example'
 			c.option '--task_definition TASK_DEFINITION', String, 'Task definiton family name'
@@ -44,29 +44,21 @@ class MyApplication
 			end
 		end
 
-		command :staging do |c|
-			c.syntax = 'devo staging [options]'
-			c.summary = ''
+		command :exec do |c|
+			c.syntax = 'devo exec [options]'
+			c.summary = 'Exec into a running docker instance.'
 			c.description = ''
 			c.example 'run a command in the context of the staging environment', 'command example'
+			c.option '--cluster CLUSTER', String, 'Cluster name to exec into.'
+			c.option '--service SERVICE', String, 'Service to exec into.'
+			c.option '--container-name CONTAINER_NAME', String, 'Container name to exec into.'
 			c.action do |args, options|
-				instance_id = find_instance_id!('staging')
-				instance_ip = find_ip_address!(instance_id)
-				task_data = find_task_data!('prise-staging')
-				
-				envs = task_data[:environment].map{|e| "-e #{e.name}=#{e.value}"}
-				
-				ecr_data = get_authorization_token
+				options.default cluster: 'staging', service: 'prise-staging', container_name: 'worker'
 
-				creds = get_aws_credentials!(task_data[:role])
-				if creds
-					envs << "-e AWS_ACCESS_KEY_ID=#{creds.access_key_id}"
-					envs << "-e AWS_SECRET_ACCESS_KEY=#{creds.secret_access_key}"
-					envs << "-e AWS_SESSION_TOKEN=#{creds.session_token}"
-				end
+				id, ip = find_runtime_id_and_ip!(options.cluster, options.service, options.container_name)
+				raise "Could not find docker id for container: #{options.cluster}:#{options.service}:#{options.container_name}" unless id
 
-				system "ssh #{instance_ip} docker login -u #{ecr_data[:user]} -p #{ecr_data[:password]} #{ecr_data[:endpoint]}"
-				cmd = "ssh -t #{instance_ip} docker run -it --rm #{envs.join(' ')} #{task_data[:image]} #{args.join(' ')}"
+				cmd = "ssh -t #{ip} docker exec -it #{id} #{args.join(' ')}"
 				exec cmd
 			end
 		end
