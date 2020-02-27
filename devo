@@ -10,7 +10,7 @@ class MyApplication
 
 	def run
 		program :name, 'devo'
-		program :version, '0.2.1'
+		program :version, '0.3.0'
 		program :description, 'Devops Tool for Mode Media'
 
 		command :run do |c|
@@ -66,6 +66,26 @@ class MyApplication
 		end
 		alias_command :staging, :exec, '--cluster', 'staging', '--service', 'prise-staging', '--container_name', 'worker'
 		alias_command :prod, :exec, '--cluster', 'production', '--service', 'prise-production-worker', '--container_name', 'worker'
+
+		command :ecs_find_env_value do |c|
+			c.syntax = 'devo ecs_find_env_value -s value'
+			c.option '-s VALUE', '--value VALUE', String, 'Value to search for.'
+			c.action do |args, options|
+				data = {}
+				ecs = Aws::ECS::Client.new
+				ecs.list_task_definitions[:task_definition_arns].each do |task_def|
+					ecs.describe_task_definition(task_definition: task_def)[:task_definition][:container_definitions].each do |container_def|
+						container_def[:environment].each do |env_var|
+							if env_var[:value].include?(options.value)
+								puts task_def
+								puts "#{env_var.name} => #{env_var.value}"
+								puts
+							end
+						end
+					end
+				end
+			end
+		end
 
 		run!
 	end
