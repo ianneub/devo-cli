@@ -20,8 +20,9 @@ class MyApplication
 			c.example 'run a command in the context of a task definition', 'devo run rails console'
 			c.option '-c CLUSTER', '--cluster CLUSTER', String, 'Cluster name to launch into'
 			c.option '--task-definition TASK_DEFINITION', String, 'Task definiton family name'
+			c.option '-p', '--[no-]print', 'Output command that would be used to stdout and exit.'
 			c.action do |args, options|
-				options.default task_definition: 'prise-production-worker', cluster: 'staging'
+				options.default task_definition: 'prise-production-worker', cluster: 'staging', print: false
 
 				instance_id = find_instance_id!(options.cluster)
 				instance_ip = find_ip_address!(instance_id)
@@ -38,9 +39,13 @@ class MyApplication
 					envs << "-e AWS_SESSION_TOKEN=#{creds.session_token}"
 				end
 
-				system "ssh #{instance_ip} docker login -u #{ecr_data[:user]} -p #{ecr_data[:password]} #{ecr_data[:endpoint]}"
 				cmd = "ssh -t #{instance_ip} docker run -it --rm #{envs.join(' ')} #{task_data[:image]} #{args.join(' ')}"
-				exec cmd
+				if options.print
+					puts cmd
+				else
+					system "ssh #{instance_ip} docker login -u #{ecr_data[:user]} -p #{ecr_data[:password]} #{ecr_data[:endpoint]}"
+					exec cmd
+				end
 			end
 		end
 
