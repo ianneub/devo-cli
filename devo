@@ -22,7 +22,7 @@ class MyApplication
 			c.option '--task-definition TASK_DEFINITION', String, 'Task definiton family name'
 			c.option '-p', '--[no-]print', 'Output command that would be used to stdout and exit.'
 			c.action do |args, options|
-				options.default task_definition: 'prise-production-worker', cluster: 'staging', print: false
+				options.default task_definition: 'prise-production-worker', cluster: 'production', print: false
 
 				instance_id = find_instance_id!(options.cluster)
 				instance_ip = find_ip_address!(instance_id)
