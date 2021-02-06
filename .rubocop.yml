@@ -1,0 +1,29 @@
+# Rubocop custom config file
+AllCops:
+  NewCops: enable
+  TargetRubyVersion: 2.7
+  Exclude:
+    - db/**/*
+
+# style and layout changes
+Layout/IndentationStyle:
+  EnforcedStyle: tabs
+
+Layout/IndentationWidth:
+  Width: 1
+
+Layout/SpaceInsideBlockBraces:
+  SpaceBeforeBlockParameters: false
+
+Style/ClassAndModuleChildren:
+  EnforcedStyle: compact
+
+# enable these in the future
+Metrics/AbcSize:
+  Enabled: false
+
+Metrics/MethodLength:
+  Enabled: false
+
+Layout/LineLength:
+  Enabled: false

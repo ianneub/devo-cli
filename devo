@@ -27,9 +27,9 @@ class MyApplication
 				instance_id = find_instance_id!(options.cluster)
 				instance_ip = find_ip_address!(instance_id)
 				task_data = find_task_data!(options.task_definition)
-				
-				envs = task_data[:environment].map{|e| "-e #{e.name}=#{e.value}"}
-				
+
+				envs = task_data[:environment].map {|e| "-e #{e.name}=#{e.value}" }
+
 				ecr_data = get_authorization_token
 
 				creds = get_aws_credentials!(task_data[:role])
@@ -64,7 +64,7 @@ class MyApplication
 				raise "Could not find docker id for container: #{options.cluster}:#{options.service}:#{options.container_name}" unless id
 
 				cmd = "ssh -t #{ip} docker exec -it #{id} #{args.join(' ')}"
-				
+
 				puts "Connecting to #{ip} ..."
 				exec cmd
 			end
