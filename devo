@@ -94,6 +94,7 @@ class MyApplication
 		end
 
 		command :ssh do |c|
+			c.syntax = 'devo ssh <command>'
 			c.description = 'Execute a command on all running instanes'
 			c.action do |args, _options|
 				find_all_running_instance_public_ip_addresses.each do |ip|
