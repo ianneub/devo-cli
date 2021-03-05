@@ -93,6 +93,16 @@ class MyApplication
 			end
 		end
 
+		command :ssh do |c|
+			c.description = 'Execute a command on all running instanes'
+			c.action do |args, _options|
+				find_all_running_instance_public_ip_addresses.each do |ip|
+					cmd = "ssh -t #{ip} #{args.join(' ')}"
+					system cmd
+				end
+			end
+		end
+
 		run!
 	end
 end

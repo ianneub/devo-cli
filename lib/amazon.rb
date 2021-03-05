@@ -8,11 +8,11 @@ module Amazon
 		ecs = Aws::ECS::Client.new
 
 		instance_arn = ecs.list_container_instances(cluster: cluster)[:container_instance_arns].first
-		
+
 		raise 'Unable to find instance' unless instance_arn
 
 		resp = ecs.describe_container_instances cluster: cluster, container_instances: [instance_arn]
-		
+
 		instance_id = resp[:container_instances].first[:ec2_instance_id]
 		raise 'Unable to find instance id' unless instance_id
 
@@ -100,5 +100,18 @@ module Amazon
 		data = ecr.get_authorization_token.authorization_data[0]
 		user, password = Base64.decode64(data.authorization_token).split(':')
 		{user: user, password: password, endpoint: data.proxy_endpoint}
+	end
+
+	def find_all_running_instance_public_ip_addresses
+		ec2 = Aws::EC2::Client.new
+		out = ec2.describe_instances({
+			filters: [
+				{
+					name: 'instance-state-name',
+					values: ['running']
+				}
+			]
+		})
+		out.reservations.map {|res| res.instances.map(&:public_ip_address) }.flatten
 	end
 end
