@@ -104,6 +104,33 @@ class MyApplication
 			end
 		end
 
+		command :clean_ecr do |c|
+			# TODO: implement function to remove old ECR images for prise
+
+			# require 'active_support/all'
+			# require 'aws-sdk-ecr'
+
+			# imgs = []
+
+			# client = Aws::ECR::Client.new
+			# token = nil
+			# while (res = client.list_images(repository_name: 'prise', next_token: token))
+			# 	res.image_ids.each do |img|
+			# 		imgs << img if img.image_tag.length > 8
+			# 	end
+			# 	token = res.next_token
+			# 	break unless token
+			# end
+			# p imgs.count
+
+			# imgs.in_groups_of(100, false).each do |group|
+			# 	client.batch_delete_image({
+			# 		repository_name: 'prise',
+			# 		image_ids: group
+			# 	})
+			# end
+		end
+
 		run!
 	end
 end
