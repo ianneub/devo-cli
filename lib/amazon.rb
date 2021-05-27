@@ -99,7 +99,7 @@ module Amazon
 		ecr = Aws::ECR::Client.new
 		data = ecr.get_authorization_token.authorization_data[0]
 		user, password = Base64.decode64(data.authorization_token).split(':')
-		{user: user, password: password, endpoint: data.proxy_endpoint}
+		{ user: user, password: password, endpoint: data.proxy_endpoint }
 	end
 
 	def find_all_running_instance_public_ip_addresses
