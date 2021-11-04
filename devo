@@ -71,7 +71,7 @@ class MyApplication
 		end
 		alias_command :staging, :exec, '--cluster', 'staging', '--service', 'prise-staging', '--container_name', 'worker'
 		alias_command :prod, :exec, '--cluster', 'production', '--service', 'prise-production-worker', '--container_name', 'worker'
-		alias_command :devops, :exec, '--cluster', 'aux', '--service', 'devops-web-worker', '--container_name', 'worker'
+		alias_command :devops, :exec, '--cluster', 'aux', '--service', 'devops-aux-worker', '--container_name', 'worker'
 
 		command :ecs_find_env_value do |c|
 			c.syntax = 'devo ecs_find_env_value -s value'
