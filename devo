@@ -6,178 +6,178 @@ require 'commander'
 require_relative 'lib/amazon'
 
 class Devo
-	include Commander::Methods
-	include Amazon
+  include Commander::Methods
+  include Amazon
 
-	def run
-		program :name, 'devo'
-		program :version, '0.4.0'
-		program :description, 'Devops Tool for Mode Media'
+  def run
+    program :name, 'devo'
+    program :version, '0.4.0'
+    program :description, 'Devops Tool for Mode Media'
 
-		command :run do |c|
-			c.syntax = 'devo run [options]'
-			c.summary = 'Run and exec into a one off docker instance based on an existing task.'
-			c.description = 'SSH into a staging instance and run a new docker instance with env vars from an existing ECS task.'
-			c.example 'run a command in the context of a task definition', 'devo run rails console'
-			c.option '-c CLUSTER', '--cluster CLUSTER', String, 'Cluster name to launch into'
-			c.option '--task-definition TASK_DEFINITION', String, 'Task definiton family name'
-			c.option '-p', '--[no-]print', 'Output command that would be used to stdout and exit.'
-			c.action do |args, options|
-				options.default task_definition: 'prise-production-worker', cluster: 'production', print: false
+    command :run do |c|
+      c.syntax = 'devo run [options]'
+      c.summary = 'Run and exec into a one off docker instance based on an existing task.'
+      c.description = 'SSH into a staging instance and run a new docker instance with env vars from an existing ECS task.'
+      c.example 'run a command in the context of a task definition', 'devo run rails console'
+      c.option '-c CLUSTER', '--cluster CLUSTER', String, 'Cluster name to launch into'
+      c.option '--task-definition TASK_DEFINITION', String, 'Task definiton family name'
+      c.option '-p', '--[no-]print', 'Output command that would be used to stdout and exit.'
+      c.action do |args, options|
+        options.default task_definition: 'prise-production-worker', cluster: 'production', print: false
 
-				instance_id = find_instance_id!(options.cluster)
-				instance_ip = find_ip_address!(instance_id)
-				task_data = find_task_data!(options.task_definition)
+        instance_id = find_instance_id!(options.cluster)
+        instance_ip = find_ip_address!(instance_id)
+        task_data = find_task_data!(options.task_definition)
 
-				envs = task_data[:environment].map {|e| "-e #{e.name}=#{e.value}" }
+        envs = task_data[:environment].map {|e| "-e #{e.name}=#{e.value}" }
 
-				ecr_data = authorization_token
+        ecr_data = authorization_token
 
-				creds = get_aws_credentials!(task_data[:role])
-				if creds
-					envs << "-e AWS_ACCESS_KEY_ID=#{creds.access_key_id}"
-					envs << "-e AWS_SECRET_ACCESS_KEY=#{creds.secret_access_key}"
-					envs << "-e AWS_SESSION_TOKEN=#{creds.session_token}"
-				end
+        creds = get_aws_credentials!(task_data[:role])
+        if creds
+          envs << "-e AWS_ACCESS_KEY_ID=#{creds.access_key_id}"
+          envs << "-e AWS_SECRET_ACCESS_KEY=#{creds.secret_access_key}"
+          envs << "-e AWS_SESSION_TOKEN=#{creds.session_token}"
+        end
 
-				cmd = "ssh -t #{instance_ip} docker run -it --rm #{envs.join(' ')} #{task_data[:image]} #{args.join(' ')}"
-				if options.print
-					puts cmd
-				else
-					system "ssh #{instance_ip} docker login -u #{ecr_data[:user]} -p #{ecr_data[:password]} #{ecr_data[:endpoint]}"
-					exec cmd
-				end
-			end
-		end
+        cmd = "ssh -t #{instance_ip} docker run -it --rm #{envs.join(' ')} #{task_data[:image]} #{args.join(' ')}"
+        if options.print
+          puts cmd
+        else
+          system "ssh #{instance_ip} docker login -u #{ecr_data[:user]} -p #{ecr_data[:password]} #{ecr_data[:endpoint]}"
+          exec cmd
+        end
+      end
+    end
 
-		command :exec do |c|
-			c.syntax = 'devo exec [options]'
-			c.summary = 'Exec into a running docker instance.'
-			c.description = 'SSH into a running ECS Container Instance and exec into a running docker container.'
-			c.example 'run a command in the context of the staging environment', 'devo exec rails console'
-			c.option '-c CLUSTER', '--cluster CLUSTER', String, 'Cluster name to exec into.'
-			c.option '-s SERVICE', '--service SERVICE', String, 'Service to exec into.'
-			c.option '--container-name CONTAINER_NAME', String, 'Container name to exec into.'
-			c.action do |args, options|
-				options.default cluster: 'staging', service: 'prise-staging', container_name: 'worker'
+    command :exec do |c|
+      c.syntax = 'devo exec [options]'
+      c.summary = 'Exec into a running docker instance.'
+      c.description = 'SSH into a running ECS Container Instance and exec into a running docker container.'
+      c.example 'run a command in the context of the staging environment', 'devo exec rails console'
+      c.option '-c CLUSTER', '--cluster CLUSTER', String, 'Cluster name to exec into.'
+      c.option '-s SERVICE', '--service SERVICE', String, 'Service to exec into.'
+      c.option '--container-name CONTAINER_NAME', String, 'Container name to exec into.'
+      c.action do |args, options|
+        options.default cluster: 'staging', service: 'prise-staging', container_name: 'worker'
 
-				id, ip = find_runtime_id_and_ip!(options.cluster, options.service, options.container_name)
-				raise "Could not find docker id for container: #{options.cluster}:#{options.service}:#{options.container_name}" unless id
+        id, ip = find_runtime_id_and_ip!(options.cluster, options.service, options.container_name)
+        raise "Could not find docker id for container: #{options.cluster}:#{options.service}:#{options.container_name}" unless id
 
-				cmd = "ssh -t #{ip} docker exec -it #{id} #{args.join(' ')}"
+        cmd = "ssh -t #{ip} docker exec -it #{id} #{args.join(' ')}"
 
-				puts "Connecting to #{ip} ..."
-				exec cmd
-			end
-		end
-		alias_command :staging, :exec, '--cluster', 'staging', '--service', 'prise-staging', '--container_name', 'worker'
-		alias_command :prod, :exec, '--cluster', 'production', '--service', 'prise-production-worker', '--container_name', 'worker'
-		alias_command :devops, :exec, '--cluster', 'aux', '--service', 'devops-aux-worker', '--container_name', 'worker'
+        puts "Connecting to #{ip} ..."
+        exec cmd
+      end
+    end
+    alias_command :staging, :exec, '--cluster', 'staging', '--service', 'prise-staging', '--container_name', 'worker'
+    alias_command :prod, :exec, '--cluster', 'production', '--service', 'prise-production-worker', '--container_name', 'worker'
+    alias_command :devops, :exec, '--cluster', 'aux', '--service', 'devops-aux-worker', '--container_name', 'worker'
 
-		command :ecs_find_env_value do |c|
-			c.syntax = 'devo ecs_find_env_value -s value'
-			c.option '-s VALUE', '--value VALUE', String, 'Value to search for.'
-			c.action do |_args, options|
-				ecs = Aws::ECS::Client.new
-				ecs.list_task_definitions[:task_definition_arns].each do |task_def|
-					ecs.describe_task_definition(task_definition: task_def)[:task_definition][:container_definitions].each do |container_def|
-						container_def[:environment].each do |env_var|
-							next unless env_var[:value].include?(options.value)
+    command :ecs_find_env_value do |c|
+      c.syntax = 'devo ecs_find_env_value -s value'
+      c.option '-s VALUE', '--value VALUE', String, 'Value to search for.'
+      c.action do |_args, options|
+        ecs = Aws::ECS::Client.new
+        ecs.list_task_definitions[:task_definition_arns].each do |task_def|
+          ecs.describe_task_definition(task_definition: task_def)[:task_definition][:container_definitions].each do |container_def|
+            container_def[:environment].each do |env_var|
+              next unless env_var[:value].include?(options.value)
 
-							puts task_def
-							puts "#{env_var.name} => #{env_var.value}"
-							puts
-						end
-					end
-				end
-			end
-		end
+              puts task_def
+              puts "#{env_var.name} => #{env_var.value}"
+              puts
+            end
+          end
+        end
+      end
+    end
 
-		command :ssh do |c|
-			c.syntax = 'devo ssh <command>'
-			c.description = 'Execute a command on all running instanes'
-			c.action do |args, _options|
-				find_all_running_instance_public_ip_addresses.each do |ip|
-					cmd = "ssh -t #{ip} #{args.join(' ')}"
-					system cmd
-				end
-			end
-		end
+    command :ssh do |c|
+      c.syntax = 'devo ssh <command>'
+      c.description = 'Execute a command on all running instanes'
+      c.action do |args, _options|
+        find_all_running_instance_public_ip_addresses.each do |ip|
+          cmd = "ssh -t #{ip} #{args.join(' ')}"
+          system cmd
+        end
+      end
+    end
 
-		command :clean_ecr do |c|
-			# TODO: implement function to remove old ECR images for prise
+    command :clean_ecr do |c|
+      # TODO: implement function to remove old ECR images for prise
 
-			# require 'active_support/all'
-			# require 'aws-sdk-ecr'
+      # require 'active_support/all'
+      # require 'aws-sdk-ecr'
 
-			# imgs = []
+      # imgs = []
 
-			# client = Aws::ECR::Client.new
-			# token = nil
-			# while (res = client.list_images(repository_name: 'prise', next_token: token))
-			# 	res.image_ids.each do |img|
-			# 		imgs << img if img.image_tag.length > 8
-			# 	end
-			# 	token = res.next_token
-			# 	break unless token
-			# end
-			# p imgs.count
+      # client = Aws::ECR::Client.new
+      # token = nil
+      # while (res = client.list_images(repository_name: 'prise', next_token: token))
+      # 	res.image_ids.each do |img|
+      # 		imgs << img if img.image_tag.length > 8
+      # 	end
+      # 	token = res.next_token
+      # 	break unless token
+      # end
+      # p imgs.count
 
-			# imgs.in_groups_of(100, false).each do |group|
-			# 	client.batch_delete_image({
-			# 		repository_name: 'prise',
-			# 		image_ids: group
-			# 	})
-			# end
-		end
+      # imgs.in_groups_of(100, false).each do |group|
+      # 	client.batch_delete_image({
+      # 		repository_name: 'prise',
+      # 		image_ids: group
+      # 	})
+      # end
+    end
 
-		command :replace_instances do |c|
-			c.syntax = 'devo replace_instances'
-			c.description = 'Replace EC2 instances in ECS clusters'
-			c.action do |_args, _options|
-				container_instances = container_instances_by_ecs_cluster
-				container_instances.delete_if {|_, instances| instances.empty? }
+    command :replace_instances do |c|
+      c.syntax = 'devo replace_instances'
+      c.description = 'Replace EC2 instances in ECS clusters'
+      c.action do |_args, _options|
+        container_instances = container_instances_by_ecs_cluster
+        container_instances.delete_if {|_, instances| instances.empty? }
 
-				instances_by_autoscaling_group.each do |group, instances|
-					puts "Detaching instances from #{group.name} ..."
-					instances.each do |instance|
-						puts "Detaching instance #{instance.instance_id}"
-						instance.detach(should_decrement_desired_capacity: false)
-					end
-				end
+        instances_by_autoscaling_group.each do |group, instances|
+          puts "Detaching instances from #{group.name} ..."
+          instances.each do |instance|
+            puts "Detaching instance #{instance.instance_id}"
+            instance.detach(should_decrement_desired_capacity: false)
+          end
+        end
 
-				# Wait for new instances to enter ECS cluster
-				container_instances.each_key do |name|
-					while container_instance_count(name) < container_instances[name].length * 2
-						puts "Waiting for container instances to enter ECS cluster #{name} ..."
-						sleep 10
-					end
+        # Wait for new instances to enter ECS cluster
+        container_instances.each_key do |name|
+          while container_instance_count(name) < container_instances[name].length * 2
+            puts "Waiting for container instances to enter ECS cluster #{name} ..."
+            sleep 10
+          end
 
-					# Mark old instances as draining
-					puts "Draining old instances in cluter #{name} ..."
-					drain_container_instances(name, container_instances[name].map(&:container_instance_arn))
-				end
+          # Mark old instances as draining
+          puts "Draining old instances in cluter #{name} ..."
+          drain_container_instances(name, container_instances[name].map(&:container_instance_arn))
+        end
 
-				# For each instance, when ECS shows no more tasks, terminate instance
-				container_instances.each do |name, instances|
-					puts "Waiting for cluster #{name} to drain ..."
-					instances.each do |instance|
-						until container_instance_tasks_count(name, instance.container_instance_arn).zero?
-							puts "Waiting for #{instance.container_instance_arn} to drain ..."
-							sleep 10
-						end
+        # For each instance, when ECS shows no more tasks, terminate instance
+        container_instances.each do |name, instances|
+          puts "Waiting for cluster #{name} to drain ..."
+          instances.each do |instance|
+            until container_instance_tasks_count(name, instance.container_instance_arn).zero?
+              puts "Waiting for #{instance.container_instance_arn} to drain ..."
+              sleep 10
+            end
 
-						puts "Terminating instance #{instance.ec2_instance_id} ..."
-						terminate_instance(instance.ec2_instance_id)
-					end
-				end
+            puts "Terminating instance #{instance.ec2_instance_id} ..."
+            terminate_instance(instance.ec2_instance_id)
+          end
+        end
 
-				puts 'Done.'
-			end
-		end
+        puts 'Done.'
+      end
+    end
 
-		run!
-	end
+    run!
+  end
 end
 
 Devo.new.run if $PROGRAM_NAME == __FILE__
