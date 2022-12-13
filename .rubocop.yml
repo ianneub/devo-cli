@@ -1,16 +1,16 @@
 # Rubocop custom config file
 AllCops:
   NewCops: enable
-  TargetRubyVersion: 2.7
+  TargetRubyVersion: 3.1
   Exclude:
     - db/**/*
 
 # style and layout changes
 Layout/IndentationStyle:
-  EnforcedStyle: tabs
+  EnforcedStyle: spaces
 
 Layout/IndentationWidth:
-  Width: 1
+  Width: 2
 
 Layout/SpaceInsideBlockBraces:
   SpaceBeforeBlockParameters: false
