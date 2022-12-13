@@ -11,7 +11,7 @@ class Devo
 
 	def run
 		program :name, 'devo'
-		program :version, '0.3.0'
+		program :version, '0.4.0'
 		program :description, 'Devops Tool for Mode Media'
 
 		command :run do |c|
@@ -129,6 +129,51 @@ class Devo
 			# 		image_ids: group
 			# 	})
 			# end
+		end
+
+		command :replace_instances do |c|
+			c.syntax = 'devo replace_instances'
+			c.description = 'Replace EC2 instances in ECS clusters'
+			c.action do |_args, _options|
+				container_instances = container_instances_by_ecs_cluster
+				container_instances.delete_if {|_, instances| instances.empty? }
+
+				instances_by_autoscaling_group.each do |group, instances|
+					puts "Detaching instances from #{group.name} ..."
+					instances.each do |instance|
+						puts "Detaching instance #{instance.instance_id}"
+						instance.detach(should_decrement_desired_capacity: false)
+					end
+				end
+
+				# Wait for new instances to enter ECS cluster
+				container_instances.each_key do |name|
+					while container_instance_count(name) < container_instances[name].length * 2
+						puts "Waiting for container instances to enter ECS cluster #{name} ..."
+						sleep 10
+					end
+
+					# Mark old instances as draining
+					puts "Draining old instances in cluter #{name} ..."
+					drain_container_instances(name, container_instances[name].map(&:container_instance_arn))
+				end
+
+				# For each instance, when ECS shows no more tasks, terminate instance
+				container_instances.each do |name, instances|
+					puts "Waiting for cluster #{name} to drain ..."
+					instances.each do |instance|
+						until container_instance_tasks_count(name, instance.container_instance_arn).zero?
+							puts "Waiting for #{instance.container_instance_arn} to drain ..."
+							sleep 10
+						end
+
+						puts "Terminating instance #{instance.ec2_instance_id} ..."
+						terminate_instance(instance.ec2_instance_id)
+					end
+				end
+
+				puts 'Done.'
+			end
 		end
 
 		run!

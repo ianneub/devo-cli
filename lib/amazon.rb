@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'aws-sdk-autoscaling'
 require 'aws-sdk-ecs'
 require 'aws-sdk-ec2'
 require 'aws-sdk-ecr'
@@ -115,5 +116,55 @@ module Amazon
                                    ]
                                  })
     out.reservations.map {|res| res.instances.map(&:public_ip_address) }.flatten
+  end
+
+  def instances_by_autoscaling_group
+    out = Hash.new {|hash, key| hash[key] = [] }
+    group_names = %w[ProductionECS ProductionECSSpot AuxECSSpot StagingECSSpot]
+    group_names.each do |name|
+      group = Aws::AutoScaling::AutoScalingGroup.new(name)
+      group.instances.each do |instance|
+        out[group] << instance
+      end
+    end
+    out
+  end
+
+  def container_instances_by_ecs_cluster
+    out = {}
+    out['aux'] = []
+    out['staging'] = []
+    out['production'] = []
+
+    client = Aws::ECS::Client.new
+    out.each do |name, _|
+      res = client.list_container_instances(cluster: name, status: 'ACTIVE')
+      res.container_instance_arns.each do |arn|
+        res = client.describe_container_instances(cluster: name, container_instances: [arn])
+        out[name] << res.container_instances[0]
+      end
+    end
+  end
+
+  def container_instance_count(cluster)
+    client = Aws::ECS::Client.new
+    res = client.list_container_instances(cluster:, status: 'ACTIVE')
+    res.container_instance_arns.length
+  end
+
+  def drain_container_instances(cluster, arns)
+    client = Aws::ECS::Client.new
+    client.update_container_instances_state(cluster:, status: 'DRAINING', container_instances: arns)
+  end
+
+  def container_instance_tasks_count(cluster, arn)
+    client = Aws::ECS::Client.new
+    res = client.describe_container_instances(cluster:, container_instances: [arn])
+    res.container_instances[0].running_tasks_count
+  end
+
+  def terminate_instance(id)
+    instance = Aws::EC2::Instance.new(id)
+    instance.terminate
   end
 end
