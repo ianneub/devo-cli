@@ -77,17 +77,16 @@ class Devo
 		command :ecs_find_env_value do |c|
 			c.syntax = 'devo ecs_find_env_value -s value'
 			c.option '-s VALUE', '--value VALUE', String, 'Value to search for.'
-			c.action do |args, options|
-				data = {}
+			c.action do |_args, options|
 				ecs = Aws::ECS::Client.new
 				ecs.list_task_definitions[:task_definition_arns].each do |task_def|
 					ecs.describe_task_definition(task_definition: task_def)[:task_definition][:container_definitions].each do |container_def|
 						container_def[:environment].each do |env_var|
-							if env_var[:value].include?(options.value)
-								puts task_def
-								puts "#{env_var.name} => #{env_var.value}"
-								puts
-							end
+							next unless env_var[:value].include?(options.value)
+
+							puts task_def
+							puts "#{env_var.name} => #{env_var.value}"
+							puts
 						end
 					end
 				end
