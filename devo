@@ -132,9 +132,12 @@ class Devo
     end
 
     command :replace_instances do |c|
-      c.syntax = 'devo replace_instances'
-      c.description = 'Replace EC2 instances in ECS clusters'
-      c.action do |_args, _options|
+      c.syntax = 'devo replace_instances --force'
+      c.description = 'Replace EC2 instances in ECS clusters. You must pass the --force flag to enable this command.'
+      c.option '--force', 'Anything less will exit'
+      c.action do |_args, options|
+        raise 'You must pass the --force flag to run this command.' unless options.force
+
         container_instances = container_instances_by_ecs_cluster
         container_instances.delete_if {|_, instances| instances.empty? }
 
