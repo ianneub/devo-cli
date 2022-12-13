@@ -30,7 +30,7 @@ class MyApplication
 
 				envs = task_data[:environment].map {|e| "-e #{e.name}=#{e.value}" }
 
-				ecr_data = get_authorization_token
+				ecr_data = authorization_token
 
 				creds = get_aws_credentials!(task_data[:role])
 				if creds

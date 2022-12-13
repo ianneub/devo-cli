@@ -97,7 +97,7 @@ module Amazon
     assumed_role.credentials
   end
 
-  def get_authorization_token
+  def authorization_token
     ecr = Aws::ECR::Client.new
     data = ecr.get_authorization_token.authorization_data[0]
     user, password = Base64.decode64(data.authorization_token).split(':')
