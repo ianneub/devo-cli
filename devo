@@ -4,7 +4,7 @@ require 'rubygems'
 require 'commander'
 require_relative 'lib/amazon'
 
-class MyApplication
+class Devo
 	include Commander::Methods
 	include Amazon
 
@@ -135,4 +135,4 @@ class MyApplication
 	end
 end
 
-MyApplication.new.run if $0 == __FILE__
+Devo.new.run if $PROGRAM_NAME == __FILE__
