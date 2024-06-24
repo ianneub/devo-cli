@@ -5,6 +5,10 @@ require 'rubygems'
 require 'commander'
 require_relative 'lib/amazon'
 
+Aws.config.update({
+  profile: 'fenderton'
+})
+
 class Devo
   include Commander::Methods
   include Amazon
@@ -42,6 +46,7 @@ class Devo
 
         cmd = "ssh -t #{instance_ip} docker run -it --rm #{envs.join(' ')} #{task_data[:image]} #{args.join(' ')}"
         if options.print
+          puts "ssh #{instance_ip} docker login -u #{ecr_data[:user]} -p #{ecr_data[:password]} #{ecr_data[:endpoint]}"
           puts cmd
         else
           system "ssh #{instance_ip} docker login -u #{ecr_data[:user]} -p #{ecr_data[:password]} #{ecr_data[:endpoint]}"
